@@ -1,0 +1,185 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">配置管理</h3>
+
+				<div class="box-tools">
+					<div class="input-group input-group-sm" style="width: 350px;">
+						<input type="text" name="table_search" id="searchNameId"
+							class="form-control pull-right" placeholder="参数名">
+					
+						<div class="input-group-btn">
+							<button type="button" class="btn btn-default btn-search">
+                                <i class="fa fa-search"></i>
+							</button>
+							
+							<button type="button" 
+							class="btn btn-default btn-delete">删除</button>
+							<button type="button" class="btn btn-default btn-add">添加</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /.box-header -->
+			<div class="box-body table-responsive no-padding">
+				<form>
+				  <table class="table table-hover">
+					<thead>
+						<tr>
+							<th><input type="checkbox" id="checkAll">全选</th>
+							<th>产品ID</th>
+		      			<th>产品名称</th>
+		      			<th>产品状态</th>
+		      			<th>产品数量</th>
+		      			<th>产品价格</th>
+		      			<th>团队人数</th>
+		      			<th>导游ID</th>
+		      			<th>产品描述</th>
+						</tr>
+					</thead>
+					<tbody id="tbodyId">
+					</tbody>
+				  </table>
+				 
+				</form>
+			</div>
+			<!-- /.box-body -->
+			<div id="pageId" class="box-footer clearfix">
+            </div>
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+
+<script type="text/javascript">
+   $(function(){
+	   $("#pageId").load("pageUI.do",function(){
+		   doGetObjects();
+	   });
+	   $(".input-group-btn")
+	   .on("click",".btn-search",doQueryObjects)
+	   .on("click",".btn-add",doLoadEditPage)
+	   .on("click",".btn-delete",doDeleteObjects)
+		  
+	  $("tbody").on("click",".btn-update",doLoadEditPage)
+	   
+	
+   })
+   function doDeleteObjects(){
+	 //1.获取选中的值
+	   var ids=doGetCheckedIds();
+	   var params={"ids":ids};
+	   console.log(ids);
+	   console.log(params);
+	   var url={url:"tour/doDeleteObject.do"};
+	   //2.对值进行验证
+	   if(ids.length==0){
+		   alert("please check");
+		   return;
+	   }
+	   $.post(url,params,function(result){
+		   if(result.state==1){
+			   doQueryObjects();
+		   }else{
+			   alert(result.message);
+		   }
+	   })
+	   
+   }
+ //获取选中的id值
+   function doGetCheckedIds(){
+	   var array=[];
+	   $("tbody input[name='checkItem']")
+	   .each(function(){
+		   if($(this).prop("checked")){
+			   array.push($(this).val());
+		   }
+	   });
+	   return array.toString();
+   }
+  function doLoadEditPage(){
+	   //定义页面标题(内容可能是添加角色也可能是修改角色)
+		var title;
+		//判定要执行的操作(是添加还是修改)
+		if($(this).hasClass("btn-add")){
+			title="添加配置"; 
+		}else if($(this).hasClass("btn-update")){
+			title="修改配置";
+			//获取当前行的id值
+			var data=$(this).parents("tr").data("data");
+			$(".container-fluid").data("data",data)
+		}
+	    $(".container-fluid").load("tour/editUI.do",function(){
+			  $(".box-title").html(title);
+	   }); 
+   }
+	
+   function doGetObjects(){
+	   //获取参数信息
+	   var pageCurrent=$(".pagination").data("pageCurrent");
+	   if(!pageCurrent)pageCurrent=1;
+	   
+	   var params={"pageCurrent":pageCurrent}
+	   var name=$("#searchNameId").val();
+	   if(name)params.name=name; 
+	  
+	   var url={url:"tour/doFindProducts.do"};
+	   $.getJSON(url,params,function(result){
+		   if(result.state==1){
+			  
+			   setTableBodyRows(result.data.list);
+			   setPagination(result.data);
+			   console.log(result.data);
+			   
+		   }else{
+			   alert(result.message);
+		   }
+	   })
+	   }
+	  function setTableBodyRows(data){
+		   //1.获取body对象
+		   var tBody=$("#tbodyId");
+		   tBody.empty();
+		   //2.迭代data，将data添加到Body中
+		   for(var i in data){
+			   var tr=$("<tr></tr>");
+			   //tr对象上绑定一个id值(唯一标识这行记录)
+			   tr.data("data",data[i]);
+			   //创建td元素
+			   var tds=createTds(data[i]);
+			   //将td元素追加到tr中
+			   tr.append(tds);
+			   //将tr追加到tBody中
+			   tBody.append(tr);
+		   }
+	   }
+	   function createTds(data){
+		   var tds="<td><input type='checkbox' name='checkItem' class='check-btn' value='"+data.id+"'></td>"+
+		   "<td>"+data.id+"</td>"+
+		   "<td>"+data.name+"</td>"+
+		   "<td><button type='button' class='btn btn-default btn-sm'>"+data.state+"</button></td>"+
+		   "<td>"+data.number+"</td>"+
+		   "<td>"+data.price+"</td>"+
+		   "<td>"+data.groupNumber+"</td>"+
+		   "<td>"+data.tourGuideId+"</td>"+
+		   "<td>"+data.description+"</td>"+
+		   "<td><button type='button' class='btn btn-default btn-update'>update</button></td>";
+		   return tds;
+	   } 
+	   function doQueryObjects(){
+		   $(".pagination").data("pageCurrent",1);
+		   doGetObjects();
+	   }
+</script>
+
+
+
+
+
+
+
+
+
+
+
